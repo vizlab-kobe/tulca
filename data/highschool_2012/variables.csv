@@ -1,0 +1,10 @@
+use for analysis,name,type
+1,total_degree,'N/A'
+1,eigenvector,'N/A'
+1,katz,'N/A'
+1,pagerank,'N/A'
+1,betweenness,'N/A'
+1,kcore_decomposition,'N/A'
+1,gender,'N/A'
+1,mean^all-total_degree,'N/A'
+1,mean^all-mean^all-total_degree,'N/A'
