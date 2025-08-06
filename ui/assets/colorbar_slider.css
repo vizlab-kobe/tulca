@@ -1,0 +1,34 @@
+.colorbar-slider .rc-slider {
+    background: transparent;
+    position: relative;
+}
+
+.colorbar-slider .rc-slider-track {
+    background: #c6ccca;
+    width: 7px;
+    border-radius: 0px;
+}
+
+.colorbar-slider .rc-slider-handle.rc-slider-handle-1 {
+    height: calc(16px / 2);
+    width: 16px;
+    background-color: #898c8e;
+    border: 0px solid #898c8e;
+    border-radius: 0px;
+    clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+}
+
+.colorbar-slider .rc-slider-handle.rc-slider-handle-2 {
+    height: calc(16px / 2);
+    width: 16px;
+    background-color: #898c8e;
+    border: 0px solid #898c8e;
+    border-radius: 0px;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.colorbar-slider .rc-slider-rail {
+    background: #fff1a1;
+    width: 7px;
+    border-radius: 0px;
+}

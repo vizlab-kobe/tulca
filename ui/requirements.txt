@@ -1,0 +1,5 @@
+pandas
+plotly
+dash
+dash-bootstrap-components
+tulca @ git+https://github.com/vizlab-kobe/tulca@main
