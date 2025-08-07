@@ -10,7 +10,6 @@ setup(
         "numpy",
         "scipy",
         "tensorly",
-        "factor-analyzer",
         "pymanopt",
     ],
     py_modules=["tulca"],

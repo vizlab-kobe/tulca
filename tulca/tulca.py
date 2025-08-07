@@ -2,11 +2,12 @@ import numpy as np
 import tensorly as tl
 
 from scipy import linalg
-from factor_analyzer import Rotator
 
 import pymanopt
 from pymanopt.manifolds import Grassmann
 from pymanopt.optimizers import TrustRegions
+
+# from factor_analyzer import Rotator
 
 
 def _generate_covs(X, y):
@@ -131,7 +132,7 @@ class TULCA:
         optimization_method="evd",
         manifold_generator=Grassmann,
         manifold_optimizer=TrustRegions(),
-        apply_varimax=False,
+        # apply_varimax=False,
         apply_consist_axes=True,
         verbosity=False,
     ):
@@ -150,7 +151,7 @@ class TULCA:
         self.optimization_method = optimization_method
         self.manifold_generator = manifold_generator
         self.manifold_optimizer = manifold_optimizer
-        self.apply_varimax = apply_varimax
+        # self.apply_varimax = apply_varimax
         self.apply_consist_axes = apply_consist_axes
         self.verbosity = verbosity
 
@@ -265,8 +266,8 @@ class TULCA:
             self.Ms_[m] = M
             self.alphas_[m] = alpha
 
-            if self.apply_varimax and self.n_components[m] > 1:
-                self.Ms_[m] = Rotator(method="varimax").fit_transform(self.Ms_[m])
+            # if self.apply_varimax and self.n_components[m] > 1:
+            #     self.Ms_[m] = Rotator(method="varimax").fit_transform(self.Ms_[m])
             if self.apply_consist_axes:
                 # consist sign (column sum will be pos)
                 self.Ms_[m] = self.Ms_[m] * np.sign(self.Ms_[m].sum(axis=0))
