@@ -26,9 +26,10 @@ X = np.load("../data/mhealth/tensor.npy")
 y = np.load("../data/mhealth/time_labels.npy")
 datasets["mhealth"] = {"X": X, "y": y}
 
-X = np.load("../data/k_log/tensor.npy")
-y = np.load("../data/k_log/time_labels.npy")
-datasets["k_log"] = {"X": X, "y": y}
+# NOTE: K log dataset is not publicly available
+# X = np.load("../data/k_log/tensor.npy")
+# y = np.load("../data/k_log/time_labels.npy")
+# datasets["k_log"] = {"X": X, "y": y}
 
 if not os.path.exists("./result/"):
     os.makedirs("./result")

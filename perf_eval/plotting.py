@@ -7,7 +7,7 @@ df = pd.read_csv("./result/perf_eval.csv")
 print(df.groupby("data").mean())
 
 # Figure
-df = pd.read_csv("./result/perf_eval_mhealth_synthetic_till_5000.csv")
+df = pd.read_csv("./result/perf_eval_mhealth_synthetic.csv")
 df = df.groupby(["n_times", "n_insts"]).mean().reset_index()
 plt.figure(figsize=(4, 2.5))
 plt.hlines(y=0.01, xmin=0, xmax=6000, linewidth=0.8, color="#cccccc")
