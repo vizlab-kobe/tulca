@@ -47,7 +47,44 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(ncols=2, figsize=(12, 6))
     axs[0].set_title("Nonlinear DR on the original data")
     axs[0].scatter(*dr.fit_transform(tl.unfold(X, 0)).T, c=y, cmap="tab10")
-    axs[1].set_title("UMAP on the TDA result")
+    axs[1].set_title("Nonlinear DR on the TDA result")
     axs[1].scatter(*dr.fit_transform(tl.unfold(Z, 0)).T, c=y, cmap="tab10")
+    plt.tight_layout()
+    plt.show()
+
+    #
+    # Example updating weights
+    #
+
+    # Example 1. Apply different weights when TULCA is not fitted yet
+    # (this is slower than re-fitting with new weights)
+    tulca = TULCA(
+        n_components=n_components,
+        w_tg=[0.0, 1.0, 1.0, 1.0],
+        w_bg=[1.0, 0.0, 0.0, 0.0],
+        w_bw=[1.0, 1.0, 1.0, 1.0],
+    )
+    # NOTE: the above weights minimize only the variance of Class 0 (blue)
+    Z1 = tulca.fit_transform(X, y)
+
+    # Example 2. Apply different weights when TULCA is already fitted
+    # (this is much faster than fit)
+    tulca.fit_with_new_weights(
+        w_tg=[0.0, 0.1, 1.0, 0.3], w_bg=[1.0, 0.1, 0.0, 0.0], w_bw=[1.0, 1.0, 1.0, 1.0]
+    )
+    Z2 = tulca.transform(X)
+
+    # Example 1. Using CP decomposition similar to the TULCA paper
+    fig, axs = plt.subplots(ncols=3, figsize=(12, 4))
+    axs[0].set_title("CP decomp of the TULCA result (1st fit)")
+    axs[0].scatter(*tl.decomposition.parafac(Z, rank=2)[1][0].T, c=y, cmap="tab10")
+    axs[1].set_title("CP decomp of the TULCA result (2nd fit)")
+    scatter = axs[1].scatter(
+        *tl.decomposition.parafac(Z1, rank=2)[1][0].T, c=y, cmap="tab10"
+    )
+    axs[2].set_title("CP decomp of the TULCA result (3rd fit)")
+    scatter = axs[2].scatter(
+        *tl.decomposition.parafac(Z2, rank=2)[1][0].T, c=y, cmap="tab10"
+    )
     plt.tight_layout()
     plt.show()
