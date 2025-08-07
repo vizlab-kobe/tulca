@@ -61,6 +61,9 @@ Interactive Visual Interface Setup and Usage
 
     `pip3 install -r requirements.txt`
 
+* (Optional) To have a precise layout used in the TULCA paper, need to adjust a CSS style embedded in the Dash library as follows.
+
+  * Find `padding:"25px"` from the installed dash's `dcc/async-slider.js` (e.g., `.venv/lib/python3.13/site-packages/dash/dcc/async-slider.js`) and replace with `padding:"0px"`.
 
 ### Usage
 
