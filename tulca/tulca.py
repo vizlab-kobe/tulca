@@ -118,6 +118,150 @@ def gen_cost_tulca(manifold, C_a, C_b, alpha):
 
 
 class TULCA:
+    """Contrastive PCA with efficient implemetation and automatic alpha selection.
+
+    Parameters
+    ----------
+    n_components: int or array-like with shape(n_modes_excluding_the_first,), optional, (default=2)
+        Number of components for each mode, except for the first mode.
+        If None, it is set to half length of each mode.
+        If a scalar is given, it is used for all modes (except for the first mode).
+    w_tg: array-like, shape(n_classes,), optional (default=None)
+        Target weights for within-class covariance matrices (C_wi) of .
+        If None, it is set to zero vector.
+        When w_bg, w_bw are also None, this is equivalent for tensor discriminant analysis.
+    w_bg: array-like, shape(n_classes,), optional (default=None)
+        Background weights for within-class covariance matrices (C_wi).
+        If None, it is set to one vector.
+    w_bw: array-like, shape(n_classes,), optional (default=None)
+        Weights for between-class covariance matrices (C_bw).
+        If None, it is set to one vector.
+    gamma_a: float, optional (default=0)
+        Regularization parameter for C_a, the sum of target within-class and between-class covariance matrices.
+        If 0, no regularization is applied.
+    gamma_b: float, optional (default=0)
+        Regularization parameter for C_b, corresponding to background within-class covariance matrix.
+        If 0, no regularization is applied.
+    alphas: float or array-like with shape(n_modes_excluding_the_first,), optional (default=None)
+        Alphas for each mode (except for the first mode), which is used to control the trade-off between
+        C_a (the sum of target within-class and between-class covariance matrices)
+        and C_b (background within-class covariance matrix).
+        If a mode's alpha is None, it is selected automatically by using iterative optimization (see the ULCA [1] paper's Eq. 10 and 11).
+        If a scalar is given, it is used for all modes (except for the first mode).
+        If None, it is set to None for each mode.
+        [1] Takanori Fujiwara, Xinhai Wei, Jian Zhao, and Kwan-Liu Ma, Interactive Dimensionality Reduction for Comparative Analysis, IEEE Transactions on Visualization and Computer Graphics, 2022.
+    convergence_ratio: float, optional (default=1e-4)
+        Ratio of improvement in alpha value to stop the optimization when using "evd" as an optimization method.
+    max_iter: int, optional, (default=100)
+        Maximum number of iterations used by the optimization when using "evd" as an optimization method.
+    optimization_method: str, optional (default="evd")
+        Method to use for optimization. Currently, "evd" (eigenvalue decomposition)
+        and "manopt" (Pymanopt) are supported.
+        If "evd", it uses eigenvalue decomposition to find the optimal projection matrix.
+        If "manopt", it uses Pymanopt library to solve the optimization problem.
+    manifold_generator: Pymanopt Manifold class, optional (default=Grassmann)
+        Manifold class used for generating manifold optimization problem when using "manopt" as an optimization method.
+    manifold_optimizer: Pymanopt Optimizer class, optional (default=TrustRegions())
+        Optimizer class used for solving manifold optimization problem when using "manopt" as an optimization method.
+    apply_consist_axes: bool, optional, (default=True)
+        If True, signs of axes and order of axes are adjusted and generate
+        more consistent axes' signs and orders.
+        Refer to Sec. 4.2.4 in Fujiwara et al., Interactive Dimensionality
+        Reduction for Comparative Analysis, 2021
+    verbosity: int, optional, (default=0)
+        Level of information logged by the solver while it operates, 0 is
+        silent, 1 or greater shows the improvement process of alpha.
+
+    Methods
+    ----------
+    fit: Fit the model to the data.
+    fit_transform: Fit the model to the data and transform it.
+    transform: Transform the data using the fitted model.
+    fit_with_new_weights: Fit the model with new weights (w_tg, w_bg, w_bw).
+    get_projection_matrices: Get the projection matrices for each mode.
+    get_current_alphas: Get the current alphas for each mode.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> import tensorly as tl
+    >>> import matplotlib.pyplot as plt
+    >>> from sklearn.preprocessing import scale
+
+    >>> from tulca import TULCA
+
+    >>> X = np.load("./data/highschool_2012/tensor.npy")
+    >>> y = np.array(pd.read_csv("./data/highschool_2012/instance_labels.csv")["label"])
+
+    >>> # the above data has TxNxD shape and labels for instances (not for time points)
+    >>> # so, move axes to make NxTxD
+    >>> X = np.moveaxis(X, 1, 0)
+    >>> # perform scaling
+    >>> X = tl.fold(scale(tl.unfold(X, 0)), 0, X.shape)
+    >>> n_components = np.array([15, 5])
+
+    >>> # TULCA with default parameters performs tensor discriminant analysis (TDA)
+    >>> tulca = TULCA(n_components=n_components)
+    >>> Z = tulca.fit_transform(X, y)
+
+    >>> # sample of getting projection matrices
+    >>> Ms = tulca.get_projection_matrices()
+
+    >>> #
+    >>> # Usage example of compressed tensor
+    >>> #
+    >>> # Example 1. Using CP decomposition similar to the TULCA paper
+    >>> cp_weights, cp_factors = tl.decomposition.parafac(Z, rank=2)
+
+    >>> fig, axs = plt.subplots(ncols=2, figsize=(12, 6))
+    >>> axs[0].set_title("CP decomp of the original tensor")
+    >>> axs[0].scatter(*tl.decomposition.parafac(X, rank=2)[1][0].T, c=y, cmap="tab10")
+    >>> axs[1].set_title("CP decomp of the TULCA result")
+    >>> axs[1].scatter(*cp_factors[0].T, c=y, cmap="tab10")
+    >>> plt.tight_layout()
+    >>> plt.show()
+
+    >>> # Example 2. Applying dimensionality reduction (DR) to n_samples unfolded tensors
+    >>> from sklearn.manifold import TSNE
+
+    >>> dr = TSNE(n_components=2)
+
+    >>> fig, axs = plt.subplots(ncols=2, figsize=(12, 6))
+    >>> axs[0].set_title("Nonlinear DR on the original data")
+    >>> axs[0].scatter(*dr.fit_transform(tl.unfold(X, 0)).T, c=y, cmap="tab10")
+    >>> axs[1].set_title("Nonlinear DR on the TDA result")
+    >>> axs[1].scatter(*dr.fit_transform(tl.unfold(Z, 0)).T, c=y, cmap="tab10")
+    >>> plt.tight_layout()
+    >>> plt.show()
+
+    >>> #
+    >>> # Example updating weights
+    >>> #
+
+    >>> # Example 1. Apply different weights when TULCA is not fitted yet
+    >>> # (this is slower than re-fitting with new weights)
+    >>> tulca = TULCA(n_components=n_components, w_tg=[0.0, 1.0, 1.0, 1.0], w_bg=[1.0, 0.0, 0.0, 0.0], w_bw=[1.0, 1.0, 1.0, 1.0])
+    >>> # NOTE: the above weights minimize only the variance of Class 0 (blue)
+    >>> Z1 = tulca.fit_transform(X, y)
+
+    >>> # Example 2. Apply different weights when TULCA is already fitted
+    >>> # (this is much faster than fit)
+    >>> tulca.fit_with_new_weights(w_tg=[0.0, 0.1, 1.0, 0.3], w_bg=[1.0, 0.1, 0.0, 0.0], w_bw=[1.0, 1.0, 1.0, 1.0])
+    >>> Z2 = tulca.transform(X)
+
+    >>> # Example 1. Using CP decomposition similar to the TULCA paper
+    >>> fig, axs = plt.subplots(ncols=3, figsize=(12, 4))
+    >>> axs[0].set_title("CP decomp of the TULCA result (1st fit)")
+    >>> axs[0].scatter(*tl.decomposition.parafac(Z, rank=2)[1][0].T, c=y, cmap="tab10")
+    >>> axs[1].set_title("CP decomp of the TULCA result (2nd fit)")
+    >>> scatter = axs[1].scatter(*tl.decomposition.parafac(Z1, rank=2)[1][0].T, c=y, cmap="tab10")
+    >>> axs[2].set_title("CP decomp of the TULCA result (3rd fit)")
+    >>> scatter = axs[2].scatter(*tl.decomposition.parafac(Z2, rank=2)[1][0].T, c=y, cmap="tab10")
+    >>> plt.tight_layout()
+    >>> plt.show()
+    """
+
     def __init__(
         self,
         n_components=None,
@@ -198,6 +342,18 @@ class TULCA:
         return M, alpha
 
     def fit(self, X, y):
+        """Fit the TULCA model.
+        Parameters
+        ----------
+        X: array-like of shape(n_elements_for_mode0, n_elements_for_mode1, ..., n_elements_for_modeN)
+            Input high-order tensor.
+        y: array-like of shape (n_elements_for_mode0)
+            Labels of mode0 of the input tensor.
+        Returns
+        -------
+        self: TULCA instance
+            Fitted TULCA instance.
+        """
         modes = np.arange(X.ndim - 1)  # exclude sample mode
         n_modes = len(modes)
         self.alphas_ = self.alphas
@@ -217,13 +373,37 @@ class TULCA:
         # prepare covariances
         self.Cwis_by_class_, self.Cbws_by_class_ = _generate_covs(X, y)
         # perform optimization
-        self.optimize()
+        self._optimize()
 
         return self
 
     def fit_with_new_weights(
         self, w_tg=None, w_bg=None, w_bw=None, gamma_a=None, gamma_b=None
     ):
+        """
+        Fit the TULCA model with new weights. This fit is much faster than the initial fit.
+        Parameters
+        ----------
+        w_tg: array-like, shape(n_classes,), optional (default=None)
+            Target weights for within-class covariance matrices (C_wi) of .
+            If None, w_tg keeps the current value.
+        w_bg: array-like, shape(n_classes,), optional (default=None)
+            Background weights for within-class covariance matrices (C_wi).
+            If None, w_bg keeps the current value.
+        w_bw: array-like, shape(n_classes,), optional (default=None)
+            Weights for between-class covariance matrices (C_bw).
+            If None, w_bw keeps the current value.
+        gamma_a: float, optional (default=0)
+            Regularization parameter for C_a, the sum of target within-class and between-class covariance matrices.
+            If 0, no regularization is applied.
+        gamma_b: float, optional (default=0)
+            Regularization parameter for C_b, corresponding to background within-class covariance matrix.
+            If 0, no regularization is applied.
+        Returns
+        -------
+        self: TULCA instance
+            Fitted TULCA instance with updated weights.
+        """
         if w_tg is not None:
             self.w_tg = w_tg
         if w_bg is not None:
@@ -235,11 +415,11 @@ class TULCA:
         if gamma_b is not None:
             self.gamma_b = gamma_b
 
-        self.optimize()
+        self._optimize()
 
         return self
 
-    def optimize(self):
+    def _optimize(self):
         C_as, C_bs = _combine_covs(
             self.Cwis_by_class_,
             self.Cbws_by_class_,
@@ -277,18 +457,54 @@ class TULCA:
         return self
 
     def transform(self, X, y=None):
+        """Transform the input tensor using the fitted TULCA model.
+        Parameters
+        ----------
+        X: array-like of shape(n_elements_for_mode0, n_elements_for_mode1, ..., n_elements_for_modeN)
+            Input high-order tensor.
+        y: array-like of shape (n_elements_for_mode0), optional (default=None)
+            Labels of mode0 of the input tensor. Not used in the current implementation.
+        Returns
+        -------
+        Z: numpy array, shape(n_elements_for_mode0, n_components[0], n_components[1], ..., n_components[N-1])
+            Transformed tensor with reduced dimensions.
+        """
         X_compressed = X
         for mode, M in enumerate(self.Ms_):
             X_compressed = tl.tenalg.mode_dot(X_compressed, M.T, mode + 1)
         return X_compressed
 
     def fit_transform(self, X, y):
+        """Fit the TULCA model and transform the input tensor.
+        Parameters
+        ----------
+        X: array-like of shape(n_elements_for_mode0, n_elements_for_mode1, ..., n_elements_for_modeN)
+            Input high-order tensor.
+        y: array-like of shape (n_elements_for_mode0)
+            Labels of mode0 of the input tensor.
+        Returns
+        -------
+        Z: numpy array, shape(n_elements_for_mode0, n_components[0], n_components[1], ..., n_components[N-1])
+            Transformed tensor with reduced dimensions.
+        """
         return self.fit(X, y).transform(X, y)
 
     def get_projection_matrices(self):
+        """Get the projection matrices for each mode.
+        Returns
+        -------
+        Ms: numpy array, shape(n_modes_excluding_the_first, n_features, n_components)
+            Projection matrices for each mode (except for the first mode).
+        """
         return np.copy(self.Ms_)
 
     def get_current_alphas(self):
+        """Get the current alphas for each mode.
+        Returns
+        -------
+        alphas: numpy array, shape(n_modes_excluding_the_first,)
+            Current alphas for each mode (except for the first mode).
+        """
         return np.copy(self.alphas_)
 
 
@@ -296,7 +512,6 @@ if __name__ == "__main__":
     import numpy as np
     import pandas as pd
     import tensorly as tl
-    import matplotlib.pyplot as plt
     from sklearn.preprocessing import scale
 
     from tulca import TULCA
