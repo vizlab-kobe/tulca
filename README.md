@@ -42,15 +42,15 @@ TULCA Setup and Usage
 
     `pip3 install .`
 
-### Usage (documentation will be provided soon)
+### Usage
 * See sample.py. 
   * sample.py can be run with `python3 sample.py` (need matplotlib: install with `pip3 install matplotlib`)
 
-* Documentation can be found in `tulca/tulca.py`. It follows the standard python documentation format and can be accessed from `help()` function. For example,
+* Documentation can be found in `tulca/tulca.py`. It follows the standard python documentation format and can be accessed from `help()` function. For example, after import tulca (`from tulca import TULCA`)
 
-  To show the entire documentation of TULCA class: `print(help(TULCA))`
+  - To show the entire documentation of TULCA class: `print(help(TULCA))`
 
-  To show a specific method's documetation of TULCA class: `print(help(TULCA.fit))`
+  - To show a specific method's documetation of TULCA class: `print(help(TULCA.fit))`
 
 ******
 
