@@ -33,24 +33,29 @@ TULCA Setup and Usage
 -----
 
 ### Requirements
+* All major OSs are supported (macOS, Linux, Windows)
+
 * Python3 (latest)
-* Note: Tested on macOS Sequoia
+
+* Note: Tested on macOS Sequoia, Ubuntu 24.04 LTS, Google Colab, and Windows 10.
 
 ### Setup
 
-* Install with pip3. Move to the directory of this repository. Then,
+* Install with pip:
 
-    `pip3 install .`
+    `pip3 install tulca`
 
 ### Usage
 * See sample.py. 
-  * sample.py can be run with `python3 sample.py` (need matplotlib: install with `pip3 install matplotlib`)
+  * sample.py can be run with `python3 sample.py` (need pandas, scikit-learn, matplotlib: install with `pip3 install pandas scikit-learn matplotlib`)
 
 * Documentation can be found in `tulca/tulca.py`. It follows the standard python documentation format and can be accessed from `help()` function. For example, after import tulca (`from tulca import TULCA`)
 
   - To show the entire documentation of TULCA class: `print(help(TULCA))`
 
   - To show a specific method's documetation of TULCA class: `print(help(TULCA.fit))`
+
+
 
 ******
 

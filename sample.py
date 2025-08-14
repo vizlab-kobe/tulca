@@ -1,4 +1,4 @@
-# install matplotlib if you want to run the example with plots
+# install pandas, scikit-learn, matplotlib if you want to run the example with plots
 if __name__ == "__main__":
     import numpy as np
     import pandas as pd
